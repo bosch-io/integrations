@@ -1,6 +1,5 @@
-{{- if .Values.amqpMessagingNetworkExample.enabled -}}
 #
-# Copyright (c) 2019, 2020 Contributors to the Eclipse Foundation
+# Copyright (c) 2020 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -14,34 +13,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  {{- $args := dict "dot" . "component" "amqp-messaging-network-router" "name" "dispatch-router" }}
-  {{- include "hono.metadata" $args | nindent 2 }}
+  name: edge-router
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "hono.matchLabels" $args | nindent 6 }}
+      name: edge-router
   template:
     metadata:
-      {{- include "hono.metadata" $args | nindent 6 }}
+      labels:
+        name: edge-router
     spec:
       containers:
-      - image: {{ .Values.amqpMessagingNetworkExample.dispatchRouter.imageName | quote }}
+      - image: quay.io/interconnectedcloud/qdrouterd:1.10.0
         imagePullPolicy: IfNotPresent
         name: apache-qpid-dispatch-router
         command:
         - /sbin/qdrouterd
         - -c
-        - /etc/hono/qdrouterd-with-{{ .Values.amqpMessagingNetworkExample.broker.type }}.json
+        - /etc/hono/edge-node-config.json
         env:
         - name: KUBERNETES_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
         ports:
-        - name: mesh
-          containerPort: 5000
-          protocol: TCP
         - name: amqps
           containerPort: 5671
           protocol: TCP
@@ -52,12 +48,8 @@ spec:
           containerPort: 5673
           protocol: TCP
         - name: health
-          containerPort: {{ .Values.healthCheckPort }}
+          containerPort: 8088
           protocol: TCP
-        {{- with .Values.amqpMessagingNetworkExample.dispatchRouter.resources }}
-        resources:
-          {{- . | toYaml | nindent 10 }}
-        {{- end }}
         livenessProbe:
           initialDelaySeconds: 180
           periodSeconds: 9
@@ -74,10 +66,9 @@ spec:
           privileged: false
         volumeMounts:
         - mountPath: /etc/hono
-          name: config
+          name: edge-config
           readOnly: true
       volumes:
-      - name: config
+      - name: edge-config
         secret:
-          secretName: {{ .Release.Name }}-dispatch-router-conf
-{{- end }}
+          secretName: edge-config

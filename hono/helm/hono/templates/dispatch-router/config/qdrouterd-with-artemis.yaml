@@ -14,7 +14,7 @@
 [
   ["router", {
     "id": "Hono.Example.Router",
-    "mode": "standalone",
+    "mode": "interior",
     "workerThreads": 3
   }],
 
@@ -36,10 +36,20 @@
   ["sslProfile", {
     "name": "internal",
     "protocols": "TLSv1.2",
-    "caCertFile": "/etc/hono/trusted-certs.pem",
-    "certFile": "/etc/hono/qdrouter-cert.pem",
-    "privateKeyFile": "/etc/hono/qdrouter-key.pem",
-    "uidFormat": "ou"
+    "caCertFile": "/etc/hono/trusted-certs.pem"
+  }],
+
+  ["listener", {
+    "sslProfile": "external",
+    "requireSsl": true,
+    "host": "0.0.0.0",
+    "port": 5000,
+    "maxSessionFrames": 200,
+    "linkCapacity": 100,
+    "authenticatePeer": true,
+    "saslMechanisms": "PLAIN",
+    "saslPlugin": "Hono Auth",
+    "role": "edge"
   }],
 
   ["listener", {
@@ -65,24 +75,13 @@
   }],
 
   ["listener", {
-    "sslProfile": "internal",
-    "requireSsl": true,
-    "host": "0.0.0.0",
-    "port": 5673,
-    "maxSessionFrames": 500,
-    "linkCapacity": 100,
-    "authenticatePeer": true,
-    "saslMechanisms": "EXTERNAL"
-  }],
-
-  ["listener", {
     "host": "0.0.0.0",
     "port": 8088,
     "http": true
   }],
 
   ["connector", {
-    "sslProfile": "external",
+    "sslProfile": "internal",
     "name": "artemis",
     "port": 5671,
     "role": "route-container",
@@ -90,6 +89,53 @@
     "saslUsername": "artemis",
     "saslPassword": "artemis",
     "verifyHostname": false
+  }],
+
+  ["connector", {
+    "sslProfile": "internal",
+    "name": "registry",
+    "port": 5671,
+    "role": "route-container",
+    "host": "{{ .Release.Name }}-service-device-registry",
+    "saslUsername": "amqp-adapter@HONO",
+    "saslPassword": "amqp-secret",
+    "verifyHostname": false
+  }],
+
+  ["linkRoute", {
+    "prefix": "tenant/",
+    "direction": "in",
+    "connection": "registry"
+  }],
+
+  ["linkRoute", {
+    "prefix": "tenant/",
+    "direction": "out",
+    "connection": "registry"
+  }],
+
+  ["linkRoute", {
+    "prefix": "registration/",
+    "direction": "in",
+    "connection": "registry"
+  }],
+
+  ["linkRoute", {
+    "prefix": "registration/",
+    "direction": "out",
+    "connection": "registry"
+  }],
+
+  ["linkRoute", {
+    "prefix": "credentials/",
+    "direction": "in",
+    "connection": "registry"
+  }],
+
+  ["linkRoute", {
+    "prefix": "credentials/",
+    "direction": "out",
+    "connection": "registry"
   }],
 
   ["linkRoute", {
@@ -130,23 +176,6 @@
         "$default": {
           "remoteHosts": "*",
           "maxSessions": 10
-        }
-      }
-  }],
-
-  ["vhost", {
-      "hostname": "hono-internal",
-      "maxConnections": 50,
-      "groups": {
-        "Hono": {
-          "users": "Eclipse IoT;Hono",
-          "remoteHosts": "*",
-          "maxSessions": 4,
-          "maxMessageSize": 131072,
-          "allowUserIdProxy": true,
-          "allowAnonymousSender": true,
-          "sources": "control/*, command/*",
-          "targets": "telemetry/*, event/*, control/*, command_response/*"
         }
       }
   }],

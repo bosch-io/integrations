@@ -89,6 +89,12 @@
         "resource": "command_response/*",
         "activities": [ "READ" ]
       }
+    ],
+    "router": [
+      {
+        "resource": "*",
+        "activities": [ "READ", "WRITE" ]
+      }
     ]
   },
   "users": {
@@ -130,6 +136,11 @@
     "device-registry": {
       "mechanism": "EXTERNAL",
       "authorities": []
+    },
+    "edge-router@HONO": {
+      "mechanism": "PLAIN",
+      "password": "edge-secret",
+      "authorities": [ "router" ]
     },
     "consumer@HONO": {
       "mechanism": "PLAIN",

@@ -1,0 +1,162 @@
+[
+  ["router", {
+    "id": "Edge.Router",
+    "mode": "edge",
+    "workerThreads": 3
+  }],
+
+  ["sslProfile", {
+    "name": "mesh",
+    "protocols": "TLSv1.2",
+    "caCertFile": "/etc/hono/trusted-certs.pem"
+  }],
+
+  ["listener", {
+    "host": "0.0.0.0",
+    "port": 5672,
+    "maxSessionFrames": 200,
+    "linkCapacity": 100,
+    "authenticatePeer": false
+  }],
+
+  ["listener", {
+    "host": "0.0.0.0",
+    "port": 8088,
+    "http": true
+  }],
+
+  ["connector", {
+    "sslProfile": "mesh",
+    "name": "hono",
+    "port": 5000,
+    "role": "edge",
+    "host": "hono-dispatch-router.hono",
+    "saslUsername": "edge-router@HONO",
+    "saslPassword": "file:/etc/hono/edge-node-pwd",
+    "verifyHostname": false
+  }],
+
+  ["linkRoute", {
+    "prefix": "tenant/",
+    "direction": "in",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "tenant/",
+    "direction": "out",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "registration/",
+    "direction": "in",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "registration/",
+    "direction": "out",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "credentials/",
+    "direction": "in",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "credentials/",
+    "direction": "out",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "command/",
+    "direction": "out",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "command_response/",
+    "direction": "in",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "telemetry/",
+    "direction": "in",
+    "connection": "mesh"
+  }],
+
+  ["linkRoute", {
+    "prefix": "event/",
+    "direction": "in",
+    "connection": "mesh"
+  }],
+
+  ["policy", {
+    "maxConnections": 1000,
+    "enableVhostPolicy": true,
+    "defaultVhost": "hono"
+  }],
+
+  ["vhost", {
+      "hostname": "hono",
+      "maxConnections": 500,
+      "maxConnectionsPerUser": 20,
+      "maxConnectionsPerHost": 10,
+      "allowUnknownUser": true,
+      "groups": {
+        "$default": {
+          "remoteHosts": "*",
+          "maxSessions": 10
+        }
+      }
+  }],
+
+  ["vhost", {
+      "hostname": "edge-router",
+      "maxConnections": 500,
+      "maxConnectionsPerUser": 20,
+      "maxConnectionsPerHost": 10,
+      "allowUnknownUser": true,
+      "groups": {
+        "$default": {
+          "remoteHosts": "*",
+          "maxSessions": 10,
+         "sources": "*",
+         "targets": "*"
+        }
+      }
+  }],
+
+  ["vhost", {
+      "hostname": "hono-internal",
+      "maxConnections": 50,
+      "groups": {
+        "Hono": {
+         "users": "Eclipse IoT;Hono",
+         "remoteHosts": "*",
+         "maxSessions": 4,
+         "maxMessageSize": 131072,
+         "allowUserIdProxy": true,
+         "allowAnonymousSender": true,
+         "sources": "command/*",
+         "targets": "telemetry/*, event/*, command_response/*"
+        }
+      }
+  }],
+
+  ["log", {
+    "module": "DEFAULT",
+    "enable": "info+"
+  }],
+
+  ["log", {
+    "module": "ROUTER",
+    "enable": "debug+"
+  }]
+]
+

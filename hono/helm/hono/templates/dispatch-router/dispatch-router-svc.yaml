@@ -1,6 +1,6 @@
 {{- if .Values.amqpMessagingNetworkExample.enabled }}
 #
-# Copyright (c) 2019 Contributors to the Eclipse Foundation
+# Copyright (c) 2019, 2020 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -18,7 +18,12 @@ metadata:
   {{- include "hono.metadata" $args | nindent 2 }}
 spec:
   ports:
-  - port: 5673
+  - name: mesh
+    port: 5000
+    protocol: TCP
+    targetPort: mesh
+  - name: internal
+    port: 5673
     protocol: TCP
     targetPort: internal
   selector:
